@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ColocationController;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -18,3 +20,13 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// ... tes autres routes (breeze, etc.)
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    
+    Route::get('/colocations', [ColocationController::class, 'index'])->name('colocation.index');
+    Route::get('/colocations/create', [ColocationController::class, 'create'])->name('colocation.create');
+    Route::post('/colocations', [ColocationController::class, 'store'])->name('colocation.store');
+
+});

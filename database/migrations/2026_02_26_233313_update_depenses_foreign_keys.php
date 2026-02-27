@@ -9,18 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('dépense', function (Blueprint $table) {
-            // 1. Drop existing foreign keys
-            // Laravel naming convention for these is: table_column_foreign
             $table->dropForeign(['category_id']);
             $table->dropForeign(['payer_id']);
 
-            // 2. Rename the columns
             $table->renameColumn('category_id', 'catégorie_id');
             $table->renameColumn('payer_id', 'payeur_id');
         });
 
         Schema::table('dépense', function (Blueprint $table) {
-            // 3. Re-add the constraints with the new names
             $table->foreign('catégorie_id')->references('id')->on('catégories')->onDelete('cascade');
             $table->foreign('payeur_id')->references('id')->on('users')->onDelete('cascade');
         });
