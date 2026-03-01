@@ -15,4 +15,9 @@ class Colocation extends Model
     {
         return $this->hasMany(Dépense::class);
     }
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'amitiés', 'colocation_id', 'user_id')
+            ->withPivot('joined_at', 'left_at');
+    }
 }

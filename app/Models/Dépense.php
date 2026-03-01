@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Dépense extends Model
 {
     protected $fillable = [
-        'colocation_id',
-        'category_id',
-        'payer_id',
         'title',
         'amount',
+        'colocation_id',
         'date',
+        'catégorie_id',
+        'payeur_id'
     ];
 
     public function colocation()

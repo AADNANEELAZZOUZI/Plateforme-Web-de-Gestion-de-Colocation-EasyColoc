@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ColocationController;
+use App\Http\Controllers\DépenseController;
 
 
 Route::get('/', function () {
@@ -28,5 +29,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/colocations', [ColocationController::class, 'index'])->name('colocation.index');
     Route::get('/colocations/create', [ColocationController::class, 'create'])->name('colocation.create');
     Route::post('/colocations', [ColocationController::class, 'store'])->name('colocation.store');
+
+    Route::get('/dépenses/create', [DépenseController::class, 'create'])->name('dépense.create');
+    Route::post('/dépenses', [DépenseController::class, 'store'])->name('dépense.store');
 
 });
