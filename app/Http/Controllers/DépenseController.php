@@ -19,7 +19,11 @@ class DépenseController extends Controller
             (object) ['id' => 5, 'name' => 'Autres'],
         ]);
 
-        $colocation = auth()->user()->colocation()->whereNull('left_at')->with('members')->first();
+        $colocation = auth()->user()->colocation()
+        ->where('status', 'active')
+        ->whereNull('left_at')
+        ->with('members')
+        ->first();
 
         $depenses = $colocation ? $colocation->dépenses()->with('payeur')->latest()->get() : collect();
 
@@ -29,21 +33,19 @@ class DépenseController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validation (si payeur_id est vide, Laravel t'arrêtera ici avec un message clair)
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
-            'payeur_id' => 'required|exists:users,id', // On vérifie que l'ID existe en base
+            'payeur_id' => 'required|exists:users,id',
             'colocation_id' => 'required|exists:colocations,id',
             'catégorie_id' => 'required',
             'date' => 'required|date',
         ]);
 
-        // 2. Création de la dépense
         $depense = Dépense::create([
             'title' => $validated['title'],
             'amount' => $validated['amount'],
-            'payeur_id' => $validated['payeur_id'], // On utilise la valeur validée
+            'payeur_id' => $validated['payeur_id'],
             'colocation_id' => $validated['colocation_id'],
             'date' => $validated['date'],
             'catégorie_id' => $request->catégorie_id,
@@ -55,7 +57,7 @@ class DépenseController extends Controller
 
         foreach ($membres as $membre) {
             if ($membre->id != $depense->payeur_id) {
-                \DB::table('a_payer')->insert([
+                \DB::table('payer_a')->insert([
                     'de_user_id' => $membre->id,
                     'a_user_id' => $depense->payeur_id,
                     'dépense_id' => $depense->id,

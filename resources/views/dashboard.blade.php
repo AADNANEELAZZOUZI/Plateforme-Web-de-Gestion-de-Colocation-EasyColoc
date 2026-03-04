@@ -3,6 +3,7 @@
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Dashboard') }}
         </h2>
+        <a class="text-lg font-bold text-gray-700 dark:text-gray-300" href="{{ route('colocation.index') }}">colocation</a>
     </x-slot>
 
     <div class="py-12">

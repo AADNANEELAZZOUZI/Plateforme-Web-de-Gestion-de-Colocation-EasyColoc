@@ -8,15 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('dépense', function (Blueprint $table) {
-            $table->dropForeign(['category_id']);
-            $table->dropForeign(['payer_id']);
+        Schema::table('dépenses', function (Blueprint $table) {
+            $table->dropForeign(['catégorie_id']);
+            $table->dropForeign(['payeur_id']);
 
-            $table->renameColumn('category_id', 'catégorie_id');
-            $table->renameColumn('payer_id', 'payeur_id');
+            $table->renameColumn('catégorie_id', 'catégorie_id');
+            $table->renameColumn('payeur_id', 'payeur_id');
         });
 
-        Schema::table('dépense', function (Blueprint $table) {
+        Schema::table('dépenses', function (Blueprint $table) {
             $table->foreign('catégorie_id')->references('id')->on('catégories')->onDelete('cascade');
             $table->foreign('payeur_id')->references('id')->on('users')->onDelete('cascade');
         });
