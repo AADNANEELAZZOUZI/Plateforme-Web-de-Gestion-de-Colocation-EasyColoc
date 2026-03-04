@@ -10,44 +10,52 @@ use App\Mail\InvitationColoc;
 use Illuminate\Support\Str;
 class ColocationController extends Controller
 {
-    public function index()
-    {
-        $user = auth()->user();
-        $colocation = auth()->user()->colocation()
-            ->where('status', 'active')->with('members')->first();
+public function index()
+{
+    $user = auth()->user();
+    
+    $colocation = null;
+    $ceQueJeDois = 0;
+    $ceQuOnMeDoit = 0;
+    $dettesDetaillees = collect();
 
-        if ($colocation) {
-            $dépenses = $colocation->dépenses()->with('payeur')->latest()->get();
+    $colocation = $user->colocation()
+        ->where('status', 'active')
+        ->whereNull('left_at')
+        ->first();
 
-            $ceQueJeDois = DB::table('payer_a')
-                ->join('dépenses', 'payer_a.dépense_id', '=', 'dépenses.id') // On lie les deux tables
-                ->where('payer_a.de_user_id', $user->id)
-                ->where('payer_a.status', 'en_attente')
-                ->where('dépenses.colocation_id', $colocation->id) // Maintenant MySQL connaît cette colonne
-                ->sum('payer_a.montant');
+    if ($colocation) {
+        $ceQueJeDois = DB::table('payer_a')
+            ->join('dépenses', 'payer_a.dépense_id', '=', 'dépenses.id')
+            ->where('payer_a.de_user_id', $user->id)
+            ->where('payer_a.status', 'en_attente')
+            ->where('dépenses.colocation_id', $colocation->id)
+            ->sum('payer_a.montant');
 
-            $ceQuOnMeDoit = DB::table('payer_a')
-                ->join('dépenses', 'payer_a.dépense_id', '=', 'dépenses.id')
-                ->where('payer_a.a_user_id', $user->id)
-                ->where('payer_a.status', 'en_attente')
-                ->where('dépenses.colocation_id', $colocation->id)
-                ->sum('payer_a.montant');
-            $dettesDetaillees = DB::table('payer_a')
-                ->join('dépenses', 'payer_a.dépense_id', '=', 'dépenses.id')
-                ->join('users as debiteur', 'payer_a.de_user_id', '=', 'debiteur.id')
-                ->join('users as creancier', 'payer_a.a_user_id', '=', 'creancier.id')
-                ->where('payer_a.status', 'en_attente')
-                ->where('dépenses.colocation_id', $colocation->id)
-                ->select('debiteur.name as qui', 'creancier.name as a_qui', 'payer_a.montant')
-                ->get();
-        } else {
-            $dépenses = collect();
-            $ceQueJeDois = 0;
-            $ceQuOnMeDoit = 0;
-        }
+        $ceQuOnMeDoit = DB::table('payer_a')
+            ->join('dépenses', 'payer_a.dépense_id', '=', 'dépenses.id')
+            ->where('payer_a.a_user_id', $user->id)
+            ->where('payer_a.status', 'en_attente')
+            ->where('dépenses.colocation_id', $colocation->id)
+            ->sum('payer_a.montant');
 
-        return view('colocation.index', compact('colocation', 'dépenses', 'ceQueJeDois', 'ceQuOnMeDoit', 'dettesDetaillees'));
+        $dettesDetaillees = DB::table('payer_a')
+            ->join('dépenses', 'payer_a.dépense_id', '=', 'dépenses.id')
+            ->join('users as debiteur', 'payer_a.de_user_id', '=', 'debiteur.id')
+            ->join('users as creancier', 'payer_a.a_user_id', '=', 'creancier.id')
+            ->where('payer_a.status', 'en_attente')
+            ->where('dépenses.colocation_id', $colocation->id)
+            ->select('debiteur.name as qui', 'creancier.name as a_qui', 'payer_a.montant')
+            ->get();
     }
+
+    return view('colocation.index', compact(
+        'colocation', 
+        'ceQueJeDois', 
+        'ceQuOnMeDoit', 
+        'dettesDetaillees'
+    ));
+}
 
     public function create()
     {
@@ -73,19 +81,23 @@ class ColocationController extends Controller
 
     public function invite(Request $request, Colocation $colocation)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate([
+            'email' => 'required|email'
+        ]);
         $token = Str::random(32);
-
         DB::table('invitations')->insert([
             'colocation_id' => $colocation->id,
             'email' => $request->email,
             'token' => $token,
             'expires_at' => now()->addDays(7),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         Mail::to($request->email)->send(new InvitationColoc($colocation, $token));
 
-        return back()->with('success', 'Invitation envoyée !');
+
+        return back()->with('success', 'Invitation envoyée avec succès à ' . $request->email);
     }
 
 
@@ -102,6 +114,14 @@ class ColocationController extends Controller
 
         DB::table('invitations')->where('token', $token)->delete();
 
+        $dejaInvite = DB::table('invitations')
+            ->where('colocation_id', $colocation->id)
+            ->where('email', $invitation->email)
+            ->exists();
+
+        if ($dejaInvite) {
+            return back()->with('error', 'Une invitation est déjà en cours pour cet email.');
+        }
         return redirect()->route('colocation.index')->with('success', 'Bienvenue dans la coloc !');
     }
 
